@@ -1,12 +1,9 @@
-import { Telegraf } from 'telegraf';
+import { Telegraf, Markup } from 'telegraf';
 import { message } from 'telegraf/filters';
 import { code } from 'telegraf/format';
-import { sendQuestion, initUserState } from './utils/index.js';
-import { quizData } from './consts/index.js';
-
-
-// Состояния пользователей
-const userStates = new Map();
+import { sendQuestion, processAnswer } from './utils/index.js';
+import { quizData } from './data/index.js';
+import { userStateService } from './store/index.js';
 
 console.log('env: ', process.env.NODE_ENV);
 const ADMIN_ID = Number(process.env.ADMIN_ID);
@@ -16,7 +13,7 @@ const bot = new Telegraf(process.env.TELEGRAMM_BOT_TOKEN);
 
 // Команда старта
 bot.start(async (ctx) => {
-  initUserState(ctx.chat.id);
+  userStateService.initUserState(ctx.chat.id);
   console.log('user.id: ', ctx.chat.id);
   await ctx.reply('Добро пожаловать в квиз об Информационной панели руководителя!');
   await ctx.reply('Ответьте на несколько вопросов, чтобы получить персонализированную информацию.');
@@ -27,7 +24,7 @@ bot.start(async (ctx) => {
 // Обработка текстовых сообщений (ответы на вопросы)
 bot.on('text', async (ctx) => {
   const chatId = ctx.chat.id;
-  const userState = userStates.get(chatId);
+  const userState = userStateService.getUserState(chatId);
 
   if (!userState || userState.showExtra) return;
 
@@ -40,16 +37,19 @@ bot.on('text', async (ctx) => {
       if (userState.tempAnswers && userState.tempAnswers.length > 0) {
         await processAnswer(ctx, currentQuestionIndex, userState.tempAnswers);
         userState.tempAnswers = null;
-      } else {
+      }
+      else {
         await ctx.reply('Пожалуйста, выберите хотя бы один вариант ответа.');
       }
-    } else {
+    }
+    else {
       if (!userState.tempAnswers) userState.tempAnswers = [];
 
       if (userState.tempAnswers.includes(userAnswer)) {
         userState.tempAnswers = userState.tempAnswers.filter(a => a !== userAnswer);
         await ctx.reply(`✅ Ответ "${userAnswer}" удален из выбора`);
-      } else {
+      }
+      else {
         userState.tempAnswers.push(userAnswer);
         await ctx.reply(`✅ Ответ "${userAnswer}" добавлен. Выберите еще или нажмите "Завершить выбор"`);
       }
@@ -58,7 +58,8 @@ bot.on('text', async (ctx) => {
         await ctx.reply(`Выбрано: ${userState.tempAnswers.join(', ')}`);
       }
     }
-  } else {
+  }
+  else {
     await processAnswer(ctx, currentQuestionIndex, userAnswer);
   }
 });
@@ -67,7 +68,7 @@ bot.on('text', async (ctx) => {
 // Обработка callback-кнопок
 bot.action('show_extra', async (ctx) => {
   const chatId = ctx.chat.id;
-  const userState = userStates.get(chatId);
+  const userState = userStateService.getUserState(chatId);
   const currentQuestionIndex = userState.currentQuestion;
   const question = quizData.questions[currentQuestionIndex];
   const lastAnswer = userState.answers[userState.answers.length - 1];
@@ -84,16 +85,19 @@ bot.action('show_extra', async (ctx) => {
 
   if (isLastQuestion) {
     buttons.push([Markup.button.callback('🏁 Завершить', 'finish')]);
-  } else {
+  }
+  else {
     buttons.push([Markup.button.callback('➡️ Далее', 'next')]);
   }
 
   await ctx.reply('Продолжим?', Markup.inlineKeyboard(buttons));
 });
 
+
+// Следующий
 bot.action('next', async (ctx) => {
   const chatId = ctx.chat.id;
-  const userState = userStates.get(chatId);
+  const userState = userStateService.getUserState(chatId);
 
   userState.currentQuestion++;
   userState.showExtra = false;
@@ -102,9 +106,11 @@ bot.action('next', async (ctx) => {
   await sendQuestion(ctx, userState.currentQuestion);
 });
 
+
+// Окончание
 bot.action('finish', async (ctx) => {
   const chatId = ctx.chat.id;
-  const userState = userStates.get(chatId);
+  const userState = userStateService.getUserState(chatId);
 
   await ctx.editMessageReplyMarkup(); // Убираем кнопки
 
@@ -115,9 +121,11 @@ bot.action('finish', async (ctx) => {
   let conclusion = '';
   if (positiveAnswers === totalAnswers) {
     conclusion = 'Вы отлично понимаете ценность информационной панели! Готовы обсудить индивидуальную настройку?';
-  } else if (positiveAnswers >= totalAnswers / 2) {
+  }
+  else if (positiveAnswers >= totalAnswers / 2) {
     conclusion = 'Вы видите потенциал инструмента! Предлагаем демо-версию для более глубокого понимания.';
-  } else {
+  }
+  else {
     conclusion = 'Рекомендуем начать с базового ознакомления. Предлагаем бесплатную консультацию по возможностям панели.';
   }
 
@@ -125,14 +133,15 @@ bot.action('finish', async (ctx) => {
   await ctx.reply('Для связи: example@company.com\nТелефон: +7 (XXX) XXX-XX-XX');
 
   // Очищаем состояние
-  userStates.delete(chatId);
+  userStateService.deleteUserState(chatId);
 });
 
 
 
 // Обработка ошибок
-bot.catch((err, ctx) => {
+bot.catch(async (err, ctx) => {
   console.error(`Error for ${ctx.updateType}:`, err);
+  await ctx.editMessageReplyMarkup(); // Убираем кнопки
 });
 
 // Запуск бота
@@ -155,5 +164,5 @@ process.once('SIGTERM', () => {
 });
 
 
-// t.me/voice_to_text_slv4ik888_bot
-// git add . && git commit -m "2025-10-23" && git push -u origin main
+// //t.me/About_dashboards_bot
+// git add . && git commit -m "Added start template" && git push -u origin main

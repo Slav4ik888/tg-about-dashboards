@@ -1,4 +1,5 @@
-
+import { Markup } from 'telegraf';
+import { quizData } from '../data/index.js';
 
 // Отправка вопроса
 export async function sendQuestion(ctx, questionIndex) {
@@ -11,7 +12,8 @@ export async function sendQuestion(ctx, questionIndex) {
     keyboard = Markup.keyboard(
       question.answers.map(answer => [answer])
     ).resize();
-  } else {
+  }
+  else {
     keyboard = Markup.keyboard([
       ...question.answers.map(answer => [answer]),
       ['✅ Завершить выбор']

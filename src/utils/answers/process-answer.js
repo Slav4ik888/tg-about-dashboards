@@ -1,5 +1,7 @@
 import { getAnswerType } from './get-answer-type.js';
 import { Markup } from 'telegraf';
+import { userStateService } from '../../store/index.js';
+import { quizData } from '../../data/index.js';
 
 
 // Обработка ответа и показ результата
@@ -8,7 +10,7 @@ export async function processAnswer(ctx, questionIndex, answer) {
   const answerType = getAnswerType(question, answer);
   const response = question.responses[answerType];
   const chatId = ctx.chat.id;
-  const userState = userStates.get(chatId);
+  const userState = userStateService.getUserState(chatId);
 
   // Сохраняем ответ
   userState.answers.push({
@@ -25,7 +27,8 @@ export async function processAnswer(ctx, questionIndex, answer) {
     await ctx.replyWithPhoto(response.image, {
       caption: response.text
     });
-  } else {
+  }
+  else {
     await ctx.reply(response.text);
   }
 
