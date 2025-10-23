@@ -1,0 +1,24 @@
+{
+  "name": "tg-sender-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "cross-env NODE_ENV=production node ./src/index.js",
+    "dev": "cross-env NODE_ENV=development nodemon ./src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Vyacheslav",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "1.12.2",
+    "dotenv": "17.2.2",
+    "telegraf": "4.16.3"
+  },
+  "devDependencies": {
+    "cross-env": "^10.0.0",
+    "nodemon": "^3.1.10"
+  }
+}
