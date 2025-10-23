@@ -1,0 +1,10 @@
+{
+  "extends" : "./tsconfig.json",
+  "exclude" : [
+    "babel.config.js",
+    "./config/**/*",
+    "./server/**/*",
+    "**/tests/**/*",
+    "**/test/**/*",
+  ]
+}

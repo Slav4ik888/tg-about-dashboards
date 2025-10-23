@@ -9,7 +9,7 @@ console.log('env: ', process.env.NODE_ENV);
 const ADMIN_ID = Number(process.env.ADMIN_ID);
 
 
-const bot = new Telegraf(process.env.TELEGRAMM_BOT_TOKEN);
+const bot = new Telegraf(process.env.TELEGRAMM_BOT_TOKEN || '');
 
 // Команда старта
 bot.start(async (ctx) => {
@@ -141,7 +141,6 @@ bot.action('finish', async (ctx) => {
 // Обработка ошибок
 bot.catch(async (err, ctx) => {
   console.error(`Error for ${ctx.updateType}:`, err);
-  await ctx.editMessageReplyMarkup(); // Убираем кнопки
 });
 
 // Запуск бота
@@ -165,4 +164,4 @@ process.once('SIGTERM', () => {
 
 
 // //t.me/About_dashboards_bot
-// git add . && git commit -m "Added start template" && git push -u origin main
+// git add . && git commit -m "Added typescrypt" && git push -u origin main

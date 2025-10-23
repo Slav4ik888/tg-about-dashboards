@@ -42,7 +42,8 @@ export async function processAnswer(ctx, questionIndex, answer) {
 
   if (isLastQuestion) {
     buttons.push([Markup.button.callback('🏁 Завершить', 'finish')]);
-  } else {
+  }
+  else {
     buttons.push([Markup.button.callback('➡️ Далее', 'next')]);
   }
 

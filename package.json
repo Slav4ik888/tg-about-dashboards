@@ -5,8 +5,12 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "build": "concurrently \"npm run copy\" \"npm run copy-env\" \"npm run tsc\"",
+    "tsc": "tsc -p tsconfig.prod.json",
+    "copy": "copyfiles -u 1 src/data/images/**/* env build",
+    "copy-env": "copyfiles .env build",
+    "dev": "cross-env NODE_ENV=development nodemon ./build/src/index.js",
     "start": "cross-env NODE_ENV=production node ./src/index.js",
-    "dev": "cross-env NODE_ENV=development nodemon ./src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -18,7 +22,18 @@
     "telegraf": "4.16.3"
   },
   "devDependencies": {
+    "@types/webpack": "5.28.5",
+    "@types/webpack-dev-server": "4.7.1",
+    "concurrently": "9.2.1",
+    "copyfiles": "2.4.1",
     "cross-env": "^10.0.0",
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "ts-jest": "29.4.5",
+    "ts-loader": "9.5.4",
+    "ts-node": "10.9.2",
+    "typescript": "5.9.3",
+    "webpack": "5.102.1",
+    "webpack-cli": "6.0.1",
+    "webpack-dev-server": "5.2.2"
   }
 }
