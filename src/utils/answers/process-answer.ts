@@ -1,22 +1,39 @@
 import { getAnswerType } from './get-answer-type.js';
-import { Markup } from 'telegraf';
-import { userStateService } from '../../store/index.js';
+import { Markup, Context } from 'telegraf';
+import { UserAnswer, UserQuestionAnswer, userStateService } from '../../store/index.js';
 import { quizData } from '../../data/index.js';
 
 
 // Обработка ответа и показ результата
-export async function processAnswer(ctx, questionIndex, answer) {
-  const question = quizData.questions[questionIndex];
-  const answerType = getAnswerType(question, answer);
-  const response = question.responses[answerType];
-  const chatId = ctx.chat.id;
-  const userState = userStateService.getUserState(chatId);
+export async function processAnswer(
+  ctx                : Context,
+  questionIndex      : number,
+  userQuestionAnswer : UserQuestionAnswer
+) {
+  if (! ctx.chat) {
+    console.error('Chat object is undefined. [processAnswer]');
+    return;
+  }
+  const question   = quizData.questions[questionIndex];
+  const answerType = getAnswerType(question, userQuestionAnswer);
+  console.log('answerType: ', answerType);
+
+  const response   = question.responses[answerType];
+  console.log('response: ', response);
+
+  const chatId     = ctx.chat.id;
+  const userState  = userStateService.getUserState(chatId);
+
+  if (! userState) {
+    console.error('userState is undefined. [processAnswer]');
+    return;
+  }
 
   // Сохраняем ответ
-  userState.answers.push({
-    questionId: question.id,
-    answer: answer,
-    type: answerType
+  userState.userAnswers.push({
+    questionId : question.id,
+    answer     : userQuestionAnswer,
+    type       : answerType
   });
 
   // Сбрасываем флаг дополнительной информации

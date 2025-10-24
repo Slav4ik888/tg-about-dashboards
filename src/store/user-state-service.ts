@@ -1,24 +1,30 @@
+import { TempAnswers, UserAnswer, UserStateServiceType } from './type.js';
+
+
 class UserStateService {
+  private userStates: Map<number, UserStateServiceType>;
+
   constructor() {
     this.userStates = new Map();
   }
 
-  initUserState(chatId) {
-    this.userStates.set(chatId, {
-      currentQuestion: 0,
-      answers: [],
-      showExtra: false,
-      tempAnswers: null
+  initUserState(userId: number) {
+    this.userStates.set(userId, {
+      currentQuestionIdx : 0,
+      userAnswers        : [],
+      showExtra          : false,
+      tempAnswers        : null,
+      createdAt          : Date.now()
     });
-    return this.getUserState(chatId);
+    return this.getUserState(userId);
   }
 
-  getUserState(chatId) {
-    return this.userStates.get(chatId);
+  getUserState(userId: number) {
+    return this.userStates.get(userId);
   }
 
-  updateUserState(chatId, updates) {
-    const userState = this.userStates.get(chatId);
+  updateUserState(userId: number, updates: Partial<UserStateServiceType>) {
+    const userState = this.userStates.get(userId);
     if (userState) {
       Object.assign(userState, updates);
       return true;
@@ -26,19 +32,19 @@ class UserStateService {
     return false;
   }
 
-  addAnswer(chatId, answer) {
-    const userState = this.userStates.get(chatId);
+  addAnswer(userId: number, answer: UserAnswer) {
+    const userState = this.userStates.get(userId);
     if (userState) {
-      userState.answers.push(answer);
+      userState.userAnswers.push(answer);
       return true;
     }
     return false;
   }
 
-  moveToNextQuestion(chatId) {
-    const userState = this.userStates.get(chatId);
+  moveToNextQuestion(userId: number) {
+    const userState = this.userStates.get(userId);
     if (userState) {
-      userState.currentQuestion++;
+      userState.currentQuestionIdx++;
       userState.showExtra = false;
       userState.tempAnswers = null;
       return true;
@@ -46,16 +52,16 @@ class UserStateService {
     return false;
   }
 
-  setTempAnswers(chatId, tempAnswers) {
-    return this.updateUserState(chatId, { tempAnswers });
+  setTempAnswers(userId: number, tempAnswers: TempAnswers) {
+    return this.updateUserState(userId, { tempAnswers });
   }
 
-  setShowExtra(chatId, showExtra) {
-    return this.updateUserState(chatId, { showExtra });
+  setShowExtra(userId: number, showExtra: boolean) {
+    return this.updateUserState(userId, { showExtra });
   }
 
-  deleteUserState(chatId) {
-    return this.userStates.delete(chatId);
+  deleteUserState(userId: number) {
+    return this.userStates.delete(userId);
   }
 
   // Для отладки
@@ -66,11 +72,11 @@ class UserStateService {
   // Очистка устаревших состояний (например, старше 24 часов)
   cleanupOldStates() {
     const now = Date.now();
-    for (const [chatId, state] of this.userStates.entries()) {
+    Array.from(this.userStates.entries()).forEach(([userId, state]) => {
       if (state.createdAt && now - state.createdAt > 24 * 60 * 60 * 1000) {
-        this.userStates.delete(chatId);
+        this.userStates.delete(userId);
       }
-    }
+    });
   }
 }
 

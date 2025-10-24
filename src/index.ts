@@ -1,7 +1,7 @@
-import { Telegraf, Markup } from 'telegraf';
+import { Telegraf, Markup, Context } from 'telegraf';
 import { message } from 'telegraf/filters';
 import { code } from 'telegraf/format';
-import { sendQuestion, processAnswer } from './utils/index.js';
+import { sendQuestion, processAnswer, multiSelect } from './utils/index.js';
 import { quizData } from './data/index.js';
 import { userStateService } from './store/index.js';
 
@@ -12,7 +12,12 @@ const ADMIN_ID = Number(process.env.ADMIN_ID);
 const bot = new Telegraf(process.env.TELEGRAMM_BOT_TOKEN || '');
 
 // Команда старта
-bot.start(async (ctx) => {
+bot.start(async (ctx: Context) => {
+  if (! ctx.chat) {
+    console.error('Chat object is undefined. [bot.start]');
+    return;
+  }
+
   userStateService.initUserState(ctx.chat.id);
   console.log('user.id: ', ctx.chat.id);
   await ctx.reply('Добро пожаловать в квиз об Информационной панели руководителя!');
@@ -21,16 +26,43 @@ bot.start(async (ctx) => {
 });
 
 
+// Логируем все текстовые сообщения
+bot.use((ctx: Context, next) => {
+  if (ctx.message && 'text' in ctx.message) {
+    console.log(`Пользователь ${ctx.from?.username} написал: ${ctx.message?.text}`);
+  }
+  return next();
+});
+
+
 // Обработка текстовых сообщений (ответы на вопросы)
-bot.on('text', async (ctx) => {
-  const chatId = ctx.chat.id;
-  const userState = userStateService.getUserState(chatId);
+bot.on('text', async (ctx: Context) => {
+  if (! ctx.chat) {
+    console.error('Chat object is undefined. [bot.hears]');
+    return;
+  }
+  if (! ctx.message) {
+    console.error('Message object is undefined. [bot.hears]');
+    return;
+  }
 
-  if (!userState || userState.showExtra) return;
+  // Check if message has text property
+  if (! ('text' in ctx.message)) {
+    console.error('Message text is undefined. [bot.hears]');
+    await ctx.reply('Неподдерживаемый тип сообщения. Пожалуйста, отправьте текстовое сообщение.');
+    return;
+  }
 
-  const currentQuestionIndex = userState.currentQuestion;
+  const userId = ctx.chat.id;
+  console.log('ctx.chat: ', ctx.chat);
+  const userState = userStateService.getUserState(userId);
+
+  if (! userState || userState.showExtra) return;
+
+  const currentQuestionIndex = userState.currentQuestionIdx;
   const question = quizData.questions[currentQuestionIndex];
   const userAnswer = ctx.message.text;
+  console.log('userAnswer: ', userAnswer);
 
   if (question.type === 'multiple') {
     if (userAnswer === '✅ Завершить выбор') {
@@ -65,18 +97,75 @@ bot.on('text', async (ctx) => {
 });
 
 
+// ОБРАБОТКА МУЛЬТISELECT
+// const FRUITS = ['🍎 Яблоко', '🍌 Банан', '🍊 Апельсин', '🍇 Виноград', '🍓 Клубника'];
+
+// bot.command('multiselect', (ctx) => {
+//   const keyboard = multiSelect.createKeyboard(FRUITS, ctx.from.id);
+//   ctx.reply('Выберите фрукты (можно несколько):', { reply_markup: keyboard });
+// });
+
+bot.action(/multiselect_(\d+)/, (ctx) => {
+  const userId = ctx.from.id;
+  const optionIndex = parseInt(ctx.match[1]);
+
+  // Текущий вопрос
+  const userState = userStateService.getUserState(userId);
+  if (! userState) return
+
+  const question = quizData.questions[userState.currentQuestionIdx];
+  multiSelect.toggleSelection(userId, optionIndex, question.answers);
+
+  const updatedKeyboard = multiSelect.createKeyboard(question.answers, userId);
+  ctx.editMessageReplyMarkup(updatedKeyboard);
+  ctx.answerCbQuery();
+});
+
+bot.action('multiselect_submit', (ctx) => {
+    const userId = ctx.from.id;
+    const selection = multiSelect.getSelection(userId);
+    console.log('selection: ', selection);
+
+    ctx.deleteMessage();
+    ctx.reply(`✅ Ваш выбор:\n${selection.map(item => `• ${item}`).join('\n')}`);
+
+    // Дальнейшая обработка массива selection
+    processUserSelection(userId, selection);
+
+    multiSelect.clearSelection(userId);
+});
+
+function processUserSelection(userId: number, selection: string[]) {
+  console.log(`Пользователь ${userId} выбрал:`, selection);
+  // Здесь ваша логика обработки выбранных options
+}
+
+
 // Обработка callback-кнопок
-bot.action('show_extra', async (ctx) => {
-  const chatId = ctx.chat.id;
-  const userState = userStateService.getUserState(chatId);
-  const currentQuestionIndex = userState.currentQuestion;
-  const question = quizData.questions[currentQuestionIndex];
-  const lastAnswer = userState.answers[userState.answers.length - 1];
-  const response = question.responses[lastAnswer.type];
+bot.action('show_extra', async (ctx: Context) => {
+  console.log('show_extra: ', ctx.message);
+
+  if (!ctx.chat) {
+    console.error('Chat object is undefined. [bot.action show_extra]');
+    return;
+  }
+
+  const userId = ctx.chat.id;
+  const userState = userStateService.getUserState(userId);
+
+  if (!userState) {
+    await ctx.reply('Произошла ошибка. Пожалуйста, начните сначала.');
+    return;
+  }
+
+  const currentQuestionIndex = userState.currentQuestionIdx;
+  const question             = quizData.questions[currentQuestionIndex];
+  const lastAnswer           = userState.userAnswers[userState.userAnswers.length - 1];
+  const response             = question.responses[lastAnswer.type];
 
   userState.showExtra = true;
 
-  await ctx.editMessageReplyMarkup(); // Убираем кнопки
+  await ctx.editMessageReplyMarkup({ inline_keyboard: [] }); // Убираем кнопки
   await ctx.reply(response.extra);
 
   // Показываем кнопки снова
@@ -95,28 +184,52 @@ bot.action('show_extra', async (ctx) => {
 
 
 // Следующий
-bot.action('next', async (ctx) => {
-  const chatId = ctx.chat.id;
-  const userState = userStateService.getUserState(chatId);
+bot.action('next', async (ctx: Context) => {
+  console.log('next: ', ctx.message);
 
-  userState.currentQuestion++;
+  if (!ctx.chat) {
+    console.error('Chat object is undefined. [bot.action next]');
+    return;
+  }
+
+  const userId = ctx.chat.id;
+  const userState = userStateService.getUserState(userId);
+
+  if (!userState) {
+    await ctx.reply('Произошла ошибка. Пожалуйста, начните сначала.');
+    return;
+  }
+
+  userState.currentQuestionIdx++;
   userState.showExtra = false;
 
-  await ctx.editMessageReplyMarkup(); // Убираем кнопки
-  await sendQuestion(ctx, userState.currentQuestion);
+  await ctx.editMessageReplyMarkup({ inline_keyboard: [] }); // Убираем кнопки
+  await sendQuestion(ctx, userState.currentQuestionIdx);
 });
 
 
 // Окончание
-bot.action('finish', async (ctx) => {
-  const chatId = ctx.chat.id;
-  const userState = userStateService.getUserState(chatId);
+bot.action('finish', async (ctx: Context) => {
+  console.log('finish: ', ctx.message);
 
-  await ctx.editMessageReplyMarkup(); // Убираем кнопки
+  if (! ctx.chat) {
+    console.error('Chat object is undefined. [bot.action finish]');
+    return;
+  }
+
+  const userId = ctx.chat.id;
+  const userState = userStateService.getUserState(userId);
+
+  if (!userState) {
+    await ctx.reply('Произошла ошибка. Пожалуйста, начните сначала.');
+    return;
+  }
+
+  await ctx.editMessageReplyMarkup({ inline_keyboard: [] }); // Убираем кнопки
 
   // Анализ результатов
-  const positiveAnswers = userState.answers.filter(a => a.type === 'positive').length;
-  const totalAnswers = userState.answers.length;
+  const positiveAnswers = userState.userAnswers.filter((a: any) => a.type === 'positive').length;
+  const totalAnswers = userState.userAnswers.length;
 
   let conclusion = '';
   if (positiveAnswers === totalAnswers) {
@@ -133,7 +246,7 @@ bot.action('finish', async (ctx) => {
   await ctx.reply('Для связи: example@company.com\nТелефон: +7 (XXX) XXX-XX-XX');
 
   // Очищаем состояние
-  userStateService.deleteUserState(chatId);
+  userStateService.deleteUserState(userId);
 });
 
 
@@ -164,4 +277,6 @@ process.once('SIGTERM', () => {
 
 
 // //t.me/About_dashboards_bot
-// git add . && git commit -m "Added typescrypt" && git push -u origin main
+// git add . && git commit -m "Added selection" && git push -u origin main
+// npm run build
+// npm run dev

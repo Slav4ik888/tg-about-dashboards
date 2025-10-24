@@ -1,20 +1,28 @@
+import { Question } from 'data/index.js';
+import { UserAnswerType, UserQuestionAnswer } from 'store/index.js';
 
 
+const getResult = (status: boolean): UserAnswerType => status ? 'positive' : 'negative';
 
 // Определение типа ответа (positive/negative)
-export function getAnswerType(question, answer) {
-  const positiveIndicators = {
-    1: [3, 4], // Знаю, видел примеры / Знаю и использую
+export function getAnswerType(
+  question           : Question,
+  userQuestionAnswer : UserQuestionAnswer
+): UserAnswerType {
+  const positiveIndicators: { [key: number]: number[] } = {
+    1: [3, 4],    // Знаю, видел примеры / Знаю и использую
     2: [0, 1, 2], // Положительные варианты пользы
-    3: [3, 4], // Можно / Да, было бы хорошо
-    4: [0] // Уже есть панель
+    3: [3, 4],    // Можно / Да, было бы хорошо
+    4: [0]        // Уже есть панель
   };
 
+  let result;
   if (question.type === 'single') {
-    return positiveIndicators[question.id]?.includes(answer) ? 'positive' : 'negative';
-  } else {
-    // Для множественного выбора считаем positive, если есть хотя бы один положительный ответ
-    const hasPositive = answer.some(a => positiveIndicators[question.id]?.includes(a));
-    return hasPositive ? 'positive' : 'negative';
+    result = positiveIndicators[question.id]?.includes(userQuestionAnswer as number)
   }
+  else {
+    // Для множественного выбора считаем positive, если есть хотя бы один положительный ответ
+    result = (userQuestionAnswer as number[]).some(a => positiveIndicators[question.id]?.includes(a));
+  }
+  return getResult(result);
 }
