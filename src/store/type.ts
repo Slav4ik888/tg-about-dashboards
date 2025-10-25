@@ -1,6 +1,6 @@
 
 
-export type UserQuestionAnswer  = number | number[]
+export type UserQuestionAnswer  = string[] // number | number[]
 export type TempAnswers = any // number[] | null
 
 export type UserAnswerType = 'positive' | 'negative'

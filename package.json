@@ -11,7 +11,7 @@
     "copy-env": "copyfiles .env build",
     "dev": "cross-env NODE_ENV=development nodemon ./build/src/index.js",
     "start": "cross-env NODE_ENV=production node ./src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test:unit": "jest --config ./config/jest/jest.config.ts"
   },
   "keywords": [],
   "author": "Vyacheslav",
@@ -19,14 +19,17 @@
   "dependencies": {
     "axios": "1.12.2",
     "dotenv": "17.2.2",
+    "regenerator-runtime": "0.14.1",
     "telegraf": "4.16.3"
   },
   "devDependencies": {
+    "@types/jest": "30.0.0",
     "@types/webpack": "5.28.5",
     "@types/webpack-dev-server": "4.7.1",
     "concurrently": "9.2.1",
     "copyfiles": "2.4.1",
     "cross-env": "^10.0.0",
+    "jest": "30.2.0",
     "nodemon": "^3.1.10",
     "ts-jest": "29.4.5",
     "ts-loader": "9.5.4",

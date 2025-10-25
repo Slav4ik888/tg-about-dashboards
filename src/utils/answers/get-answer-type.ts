@@ -1,5 +1,6 @@
 import { Question } from 'data/index.js';
 import { UserAnswerType, UserQuestionAnswer } from 'store/index.js';
+import { getSelectedIndexesSafe } from './get-selected-indexes-safe/index.js';
 
 
 const getResult = (status: boolean): UserAnswerType => status ? 'positive' : 'negative';
@@ -16,13 +17,15 @@ export function getAnswerType(
     4: [0]        // Уже есть панель
   };
 
+  const userQuestionAnswerIdx = getSelectedIndexesSafe(question.answers, userQuestionAnswer);
+
   let result;
   if (question.type === 'single') {
-    result = positiveIndicators[question.id]?.includes(userQuestionAnswer as number)
+    result = positiveIndicators[question.id]?.includes(userQuestionAnswerIdx[0])
   }
   else {
     // Для множественного выбора считаем positive, если есть хотя бы один положительный ответ
-    result = (userQuestionAnswer as number[]).some(a => positiveIndicators[question.id]?.includes(a));
+    result = userQuestionAnswerIdx.some(a => positiveIndicators[question.id]?.includes(a));
   }
   return getResult(result);
 }

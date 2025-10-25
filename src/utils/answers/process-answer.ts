@@ -10,10 +10,7 @@ export async function processAnswer(
   questionIndex      : number,
   userQuestionAnswer : UserQuestionAnswer
 ) {
-  if (! ctx.chat) {
-    console.error('Chat object is undefined. [processAnswer]');
-    return;
-  }
+  if (! ctx.chat) { console.error('Chat object is undefined. [processAnswer]'); return; }
   const question   = quizData.questions[questionIndex];
   const answerType = getAnswerType(question, userQuestionAnswer);
   console.log('answerType: ', answerType);
@@ -24,10 +21,7 @@ export async function processAnswer(
   const chatId     = ctx.chat.id;
   const userState  = userStateService.getUserState(chatId);
 
-  if (! userState) {
-    console.error('userState is undefined. [processAnswer]');
-    return;
-  }
+  if (! userState) { console.error('userState is undefined. [processAnswer]'); return; }
 
   // Сохраняем ответ
   userState.userAnswers.push({
