@@ -20,6 +20,7 @@ class UserStateService {
   }
 
   getUserState(userId: number) {
+    console.log('userStates: ', this.userStates.get(userId));
     return this.userStates.get(userId);
   }
 

@@ -1,7 +1,7 @@
 import { Telegraf } from 'telegraf';
 import { message } from 'telegraf/filters';
 import { code } from 'telegraf/format';
-import { actionFinish, actionMultiselect, actionMultiselectSubmit, actionNext, actionShowExtra, onText, start, useLogger } from './handlers/index.js';
+import { actionFinish, actionMultiselect, actionMultiselectSubmit, actionNext, actionShowExtra, actionSingleselect, onText, start, useLogger } from './handlers/index.js';
 
 console.log('env: ', process.env.NODE_ENV);
 
@@ -12,6 +12,9 @@ bot.start(start);
 bot.use(useLogger);
 
 bot.on('text', onText); // Обработка текстовых сообщений (ответы на вопросы)
+
+// Обработка singleselect_
+bot.action(/singleselect_(\d+)/, actionSingleselect);
 
 // Обработка multiselect_
 bot.action(/multiselect_(\d+)/, actionMultiselect);
@@ -49,7 +52,7 @@ process.once('SIGTERM', () => {
 
 
 // //t.me/About_dashboards_bot
-// git add . && git commit -m "Fixed selection" && git push -u origin main
+// git add . && git commit -m "Fixed single answers" && git push -u origin main
 // npm run build
 // npm run dev
 

@@ -8,9 +8,9 @@ class MultiSelect {
   createKeyboard(options: string[], userId: number) {
     const userSelection = this.userSelections.get(userId) || [];
 
-    const keyboard = options.map(option => [{
+    const keyboard = options.map((option, idx) => [{
       text: `${userSelection.includes(option) ? '✅ ' : ''}${option}`,
-      callback_data: `multiselect_${options.indexOf(option)}`
+      callback_data: `multiselect_${idx}`
     }]);
 
     if (userSelection.length > 0) {

@@ -10,6 +10,8 @@ export async function processAnswer(
   questionIndex      : number,
   userQuestionAnswer : UserQuestionAnswer
 ) {
+  // ctx.reply('', Markup.removeKeyboard());
+
   if (! ctx.chat) { console.error('Chat object is undefined. [processAnswer]'); return; }
   const question   = quizData.questions[questionIndex];
   const answerType = getAnswerType(question, userQuestionAnswer);
