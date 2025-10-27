@@ -15,7 +15,7 @@ export const actionMultiselectSubmit = async (ctx: Context) => {
   const userAnswer = multiSelect.getSelection(userId);
 
   ctx.deleteMessage();
-  ctx.reply(`✅ Ваш выбор:\n${userAnswer.map(item => `  • ${item}`).join('\n')}`);
+  // ctx.reply(`✅ Ваш выбор:\n${userAnswer.map(item => `  • ${item}`).join('\n')}`);
 
   // Обработка выбранных пунктов
   await processAnswer(ctx, currentQuestionIndex, userAnswer);

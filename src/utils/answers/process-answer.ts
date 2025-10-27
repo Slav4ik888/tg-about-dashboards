@@ -1,7 +1,8 @@
 import { getAnswerType } from './get-answer-type.js';
 import { Markup, Context } from 'telegraf';
-import { UserAnswer, UserQuestionAnswer, userStateService } from '../../store/index.js';
+import { UserQuestionAnswer, userStateService } from '../../store/index.js';
 import { quizData } from '../../data/index.js';
+import { tempMessage } from '../../utils/index.js';
 
 
 // Обработка ответа и показ результата
@@ -13,6 +14,8 @@ export async function processAnswer(
   // ctx.reply('', Markup.removeKeyboard());
 
   if (! ctx.chat) { console.error('Chat object is undefined. [processAnswer]'); return; }
+  tempMessage.clearTempMessages(ctx, ctx.chat.id);
+
   const question   = quizData.questions[questionIndex];
   const answerType = getAnswerType(question, userQuestionAnswer);
   console.log('answerType: ', answerType);
@@ -60,5 +63,6 @@ export async function processAnswer(
     buttons.push([Markup.button.callback('➡️ Далее', 'next')]);
   }
 
-  await ctx.reply('Выберите действие:', Markup.inlineKeyboard(buttons));
+  const res = await ctx.reply('Выберите действие:', Markup.inlineKeyboard(buttons));
+  tempMessage.addId(res.chat.id, res.message_id);
 }

@@ -4,6 +4,7 @@ import { userStateService } from '../store/index.js';
 import { multiSelect } from '../utils/index.js';
 
 
+/** Обработка клацанья во множественных ответах, без отправки */
 export const actionMultiselect = (ctx: Context) => {
   if (! ctx.chat) { console.error('Chat object is undefined. [bot.action multiselect_0]'); return; }
   if (! ctx.from) { console.error('from object is undefined. [bot.action multiselect_0]'); return; }

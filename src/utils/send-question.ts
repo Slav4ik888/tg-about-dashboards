@@ -1,14 +1,34 @@
 import { Context, Markup } from 'telegraf';
 import { quizData } from '../data/index.js';
-import { multiSelect, singleSelect } from './index.js';
+import { multiSelect, singleSelect, tempMessage } from './index.js';
 
 // Отправка вопроса
 export async function sendQuestion(ctx: Context, questionIndex: number) {
   const question = quizData.questions[questionIndex];
   const isLastQuestion = questionIndex === quizData.questions.length - 1;
 
-  const res = await ctx.reply(`Вопрос ${questionIndex + 1}/${quizData.questions.length}:`);
-  const message_ids = [res.message_id];
+  const res = await ctx.reply(`Вопрос ${questionIndex + 1} из ${quizData.questions.length}:`);
+  console.log('res: ', res.message_id);
+  tempMessage.clearTempMessages(ctx, res.chat.id); // Очищаем предыдущие сообщения
+  tempMessage.addId(res.chat.id, res.message_id); // Сохраняем новое
+  // res:  {
+  //   message_id: 268,
+  //   from: {
+  //     id: 82996136,
+  //     is_bot: true,
+  //     first_name: 'About dashboards',
+  //     username: 'About_dashboards_bot'
+  //   },
+  //   chat: {
+  //     id: 544083780,
+  //     first_name: 'Вячеслав',
+  //     last_name: 'Кор',
+  //     username: 'slava555',
+  //     type: 'private'
+  //   },
+  //   date: 1761575365,
+  //   text: 'Вопрос 1/4:'
+  // }
 
   let keyboard;
 
@@ -31,12 +51,10 @@ export async function sendQuestion(ctx: Context, questionIndex: number) {
     // ];
   }
 
-  // ctx.reply('Клавиатура удалена', Markup.removeKeyboard());
   const res2 = await ctx.reply(question.text, {
     parse_mode   : 'HTML',
     reply_markup : keyboard,
   });
 
-  message_ids.push(res2.message_id);
-  await ctx.deleteMessages(message_ids);
+  tempMessage.addId(res2.chat.id, res2.message_id);
 }

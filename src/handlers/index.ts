@@ -1,5 +1,6 @@
 export { onText } from './on-text.js'
 export { start } from './start.js'
+export { replay } from './replay.js'
 export { useLogger } from './use-logger.js'
 export { actionFinish } from './action-finish.js'
 export { actionMultiselect } from './action-multiselect.js'
